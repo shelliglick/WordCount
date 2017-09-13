@@ -4,16 +4,20 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class WordCount {
 
     public static void main(String[] args) {
-        List<String> files = Arrays.asList("File1.txt", "File2.txt", "File3.txt");
+        List<String> files = Arrays.asList("File1.txt", "File2.txt", "File3.txt", "File4.txt", "File5.txt",
+                "File6.txt");
         WordCount wc = new WordCount();
 
-        HashMap<String, Integer> wordToCount = new HashMap<>();
+        Map<String, Integer> wordToCount = new HashMap<>();
         for (String file : files) {
             wc.countWords(file, wordToCount);
         }
@@ -28,6 +32,22 @@ public class WordCount {
         if (wordToCountStream != null) {
             System.out.println("count with stream: " + wordToCountStream);
         }
+
+        WordCountSync wcs = new WordCountSync();
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        pool.execute(() -> wcs.addToCountSyncMethod(files.get(0)));
+        pool.execute(() -> wcs.addToCountSyncMethod(files.get(1)));
+        pool.execute(() -> wcs.addToCountSyncMethod(files.get(2)));
+        pool.execute(() -> wcs.addToCountSyncBlock(files.get(3)));
+        pool.execute(() -> wcs.addToCountSyncBlock(files.get(4)));
+        pool.execute(() -> wcs.addToCountSyncBlock(files.get(5)));
+
+        pool.shutdown();
+        wordToCount = wcs.getWordToCount();
+        System.out.println("count with sync blocks and method: " + wordToCount);
+
+
+
     }
 
 
